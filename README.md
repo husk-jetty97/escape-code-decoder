@@ -48,6 +48,12 @@ $ printf '\033]0;my title\007' | escseq
      0  ESC ] 0;my title BEL          OSC: set icon name and window title ("my title")
 ```
 
+Or point it at a file directly with `-f`, which skips the shell pipe:
+
+```
+$ escseq -f session.log
+```
+
 Coverage: CSI sequences (cursor movement, SGR colors and attributes,
 erase, scroll regions, DEC private modes via `?`), OSC sequences (window
 title, colors, hyperlinks), the string sequences (DCS/SOS/PM/APC, shown

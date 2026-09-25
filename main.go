@@ -15,6 +15,7 @@ import (
 func main() {
 	if len(os.Args) > 1 && (os.Args[1] == "-h" || os.Args[1] == "--help") {
 		fmt.Println("usage: escseq 'literal string with \\x1b or \\e escapes'")
+		fmt.Println("       escseq -f <path>       (reads raw bytes from a file)")
 		fmt.Println("       ... | escseq          (reads raw bytes from stdin)")
 		return
 	}
@@ -31,6 +32,12 @@ func main() {
 }
 
 func readInput() ([]byte, error) {
+	if len(os.Args) > 1 && os.Args[1] == "-f" {
+		if len(os.Args) < 3 {
+			return nil, fmt.Errorf("-f requires a file path")
+		}
+		return os.ReadFile(os.Args[2])
+	}
 	if len(os.Args) > 1 {
 		return []byte(unescape(strings.Join(os.Args[1:], " "))), nil
 	}

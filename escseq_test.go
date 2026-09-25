@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -154,6 +156,36 @@ func TestDecodeIncompleteAtEnd(t *testing.T) {
 	}
 	if !strings.Contains(events[1].desc, "incomplete escape sequence") {
 		t.Errorf("desc = %q, want incomplete escape sequence", events[1].desc)
+	}
+}
+
+func TestReadInputFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "session.log")
+	want := []byte("plain\x1b[31mred\x1b[0m")
+	if err := os.WriteFile(path, want, 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	origArgs := os.Args
+	defer func() { os.Args = origArgs }()
+	os.Args = []string{"escseq", "-f", path}
+
+	got, err := readInput()
+	if err != nil {
+		t.Fatalf("readInput() error = %v", err)
+	}
+	if string(got) != string(want) {
+		t.Errorf("readInput() = %q, want %q", got, want)
+	}
+}
+
+func TestReadInputFileMissingPath(t *testing.T) {
+	origArgs := os.Args
+	defer func() { os.Args = origArgs }()
+	os.Args = []string{"escseq", "-f"}
+
+	if _, err := readInput(); err == nil {
+		t.Error("readInput() with no path after -f, want error")
 	}
 }
 
