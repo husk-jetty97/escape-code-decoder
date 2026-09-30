@@ -54,6 +54,17 @@ Or point it at a file directly with `-f`, which skips the shell pipe:
 $ escseq -f session.log
 ```
 
+Going the other way, `-r` takes words describing what you want and prints
+the sequences whose explanation contains all of them, in the same
+backslash notation the tool accepts as input:
+
+```
+$ escseq -r erase line
+\x1b[0K                  erase from cursor to end of line
+\x1b[1K                  erase from start of line to cursor
+\x1b[2K                  erase entire line
+```
+
 Coverage: CSI sequences (cursor movement, SGR colors and attributes,
 erase, scroll regions, DEC private modes via `?`), OSC sequences (window
 title, colors, hyperlinks), the string sequences (DCS/SOS/PM/APC, shown

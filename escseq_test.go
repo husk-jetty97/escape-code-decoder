@@ -189,6 +189,68 @@ func TestReadInputFileMissingPath(t *testing.T) {
 	}
 }
 
+func TestReverse(t *testing.T) {
+	cases := []struct {
+		query, wantSeq string
+	}{
+		{"erase entire line", "\x1b[2K"},
+		{"Foreground RED", "\x1b[31m"},
+		{"bracketed paste", "\x1b[?2004h"},
+		{"full terminal reset", "\x1bc"},
+		{"window title", "\x1b]2;TITLE\x07"},
+	}
+	for _, c := range cases {
+		found := false
+		for _, m := range reverse(c.query) {
+			if m.seq == c.wantSeq {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("reverse(%q) did not include %q", c.query, c.wantSeq)
+		}
+	}
+	if got := reverse("   "); got != nil {
+		t.Errorf("reverse of blank query = %+v, want nil", got)
+	}
+	if got := reverse("no such effect"); len(got) != 0 {
+		t.Errorf("reverse(no such effect) = %+v, want none", got)
+	}
+}
+
+// Every emitted sequence should decode back to the description it was
+// generated from, except the placeholder-bearing OSC ones.
+func TestReverseRoundTrip(t *testing.T) {
+	for _, e := range emissions() {
+		if strings.Contains(e.seq, "TITLE") {
+			continue
+		}
+		events := decode([]byte(unescape(escapeForDisplay(e.seq))))
+		if len(events) != 1 {
+			t.Errorf("%q decoded to %d events, want 1", e.seq, len(events))
+			continue
+		}
+		if strings.Contains(events[0].desc, "unrecognized") {
+			t.Errorf("%q decoded as %q", e.seq, events[0].desc)
+		}
+	}
+}
+
+func TestEscapeForDisplay(t *testing.T) {
+	if got := escapeForDisplay("\x1b]0;x\x07"); got != `\x1b]0;x\x07` {
+		t.Errorf("escapeForDisplay = %q", got)
+	}
+}
+
+func TestRunReverseErrors(t *testing.T) {
+	if err := runReverse("  "); err == nil {
+		t.Error("runReverse with blank query, want error")
+	}
+	if err := runReverse("zzzz"); err == nil {
+		t.Error("runReverse with no matches, want error")
+	}
+}
+
 func TestDecodeLiteralTextTruncation(t *testing.T) {
 	long := strings.Repeat("x", 50)
 	events := decode([]byte(long))

@@ -17,6 +17,15 @@ func main() {
 		fmt.Println("usage: escseq 'literal string with \\x1b or \\e escapes'")
 		fmt.Println("       escseq -f <path>       (reads raw bytes from a file)")
 		fmt.Println("       ... | escseq          (reads raw bytes from stdin)")
+		fmt.Println("       escseq -r <words>      (prints sequences whose meaning matches the words)")
+		return
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "-r" {
+		if err := runReverse(strings.Join(os.Args[2:], " ")); err != nil {
+			fmt.Fprintln(os.Stderr, "escseq:", err)
+			os.Exit(1)
+		}
 		return
 	}
 
@@ -29,6 +38,20 @@ func main() {
 	for _, e := range decode(data) {
 		fmt.Printf("%6d  %-30s %s\n", e.offset, e.raw, e.desc)
 	}
+}
+
+func runReverse(query string) error {
+	if strings.TrimSpace(query) == "" {
+		return fmt.Errorf("-r requires a name or effect to look up")
+	}
+	matches := reverse(query)
+	if len(matches) == 0 {
+		return fmt.Errorf("nothing matches %q", query)
+	}
+	for _, m := range matches {
+		fmt.Printf("%-24s %s\n", escapeForDisplay(m.seq), m.desc)
+	}
+	return nil
 }
 
 func readInput() ([]byte, error) {
